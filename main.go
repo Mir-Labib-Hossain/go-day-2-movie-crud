@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand/v2"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -27,14 +29,34 @@ func getMovies(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(movies)
 }
 
-func createMovie(w http.ResponseWriter, r *http.Request) {}
+func createMovie(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var movie Movie
+	json.NewDecoder(r.Body).Decode(&movie) // store payload @ movie variable
+	movie.Id = strconv.Itoa(rand.IntN(1000000000000))
+	movies = append(movies, movie)
+}
 
-func updateMovie(w http.ResponseWriter, r *http.Request) {}
+func updateMovie(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	w.Header().Set("Content-Type", "application/json")
+	var updateMovie Movie
+	for i, movie := range movies {
+		if movie.Id == params["id"] {
+			json.NewDecoder(r.Body).Decode(&updateMovie)
+			movies = append(movies[:i], movies[i+1:]...)
+			movies = append(movies, updateMovie)
+			json.NewEncoder(w).Encode(updateMovie)
+			return
+		}
+	}
+}
 
 func getMovie(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	paramId := params["id"]
+
 	for _, movie := range movies {
 		if movie.Id == paramId {
 			json.NewEncoder(w).Encode(movie)
